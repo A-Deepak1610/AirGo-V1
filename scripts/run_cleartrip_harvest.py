@@ -22,17 +22,21 @@ def main():
     parser.add_argument("--horizons", type=str, default="0,1,7,15,30,45", help="Comma-separated advance horizons in days (default: 0,1,7,15,30,45)")
     parser.add_argument("--checkout", action="store_true", default=False, help="Whether to execute representative checkout tax audit (default: False)")
     parser.add_argument("--csv", type=str, default="data/processed/dgca_top100_route_basket.csv", help="Path to DGCA route basket CSV")
+    parser.add_argument("--visible", action="store_true", default=False, help="Launch visible browser window (default: headless)")
+    parser.add_argument("--headless", action="store_true", default=True, help="Launch browser in headless mode (default: True)")
 
     args = parser.parse_args()
     horizons_list = [int(h.strip()) for h in args.horizons.split(",") if h.strip().isdigit()]
     csv_full_path = os.path.join(ROOT_DIR, args.csv) if not os.path.isabs(args.csv) else args.csv
+    is_headless = not args.visible if args.visible else args.headless
 
     asyncio.run(
         run_cleartrip_harvest(
             csv_path=csv_full_path,
             top_n=args.top_n,
             horizons=horizons_list,
-            checkout=args.checkout
+            checkout=args.checkout,
+            headless=is_headless
         )
     )
 

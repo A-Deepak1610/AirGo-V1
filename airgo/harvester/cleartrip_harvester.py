@@ -236,12 +236,12 @@ async def representative_tax_audit(
             pass
 
 
-async def launch_cleartrip_context(p, profile_dir: str) -> BrowserContext:
+async def launch_cleartrip_context(p, profile_dir: str, headless: bool = True) -> BrowserContext:
     try:
         return await p.chromium.launch_persistent_context(
             user_data_dir=profile_dir,
             channel="msedge",
-            headless=False,
+            headless=headless,
             no_viewport=True,
             locale="en-IN",
             timezone_id="Asia/Kolkata"
@@ -250,7 +250,7 @@ async def launch_cleartrip_context(p, profile_dir: str) -> BrowserContext:
         return await p.chromium.launch_persistent_context(
             user_data_dir=profile_dir,
             channel="chrome",
-            headless=False,
+            headless=headless,
             no_viewport=True,
             locale="en-IN",
             timezone_id="Asia/Kolkata"
@@ -261,7 +261,8 @@ async def run_cleartrip_harvest(
     csv_path: str,
     top_n: int = 1,
     horizons: List[int] = [0, 1, 7, 15, 30, 45],
-    checkout: bool = False
+    checkout: bool = False,
+    headless: bool = True
 ) -> str:
     """
     Master Cleartrip Harvester.
@@ -279,6 +280,7 @@ async def run_cleartrip_harvest(
     print(f"   * Scraping Run ID : {scraping_run_id}")
     print(f"   * Target Routes   : {len(routes)} Top DGCA Routes")
     print(f"   * Horizons        : {[f'T+{h}' for h in horizons]}")
+    print(f"   * Mode            : {'⚡ Fast Headless Engine' if headless else '🖥️ Visible Window'}")
     print(f"   * Output Folder   : {run_dir}")
     print("=" * 95)
 
@@ -293,7 +295,7 @@ async def run_cleartrip_harvest(
 
             route_profile_dir = tempfile.mkdtemp(prefix=f"airgo_ct_{route_code}_")
             print(f"\n🌐 Launching browser for Route [{route_idx + 1}/{len(routes)}]: {route_code}...")
-            context = await launch_cleartrip_context(p, route_profile_dir)
+            context = await launch_cleartrip_context(p, route_profile_dir, headless=headless)
 
             try:
                 for h in horizons:
