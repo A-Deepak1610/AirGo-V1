@@ -1,3 +1,3 @@
 """
-AirGo Test Suite.
+Unit and integration tests for AirGo.
 """

@@ -1,6 +1,5 @@
 """
-AirGo: Automated Real-Time Airfare Price Index (APIx) System
-Designed for National Statistical Office (MoSPI) and Reserve Bank of India (RBI).
+AirGo: Airfare Analytics and Scraping Platform.
 """
 
 __version__ = "1.0.0"

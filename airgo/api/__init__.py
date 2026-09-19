@@ -1,3 +1,3 @@
 """
-AirGo API Module.
+AirGo API package.
 """
