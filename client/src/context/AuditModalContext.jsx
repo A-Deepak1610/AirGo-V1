@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { auditedFlightsList } from '../data/scrapedRunsData';
 
+import searchResultsImg from '../assets/2026-09-23_23-21-54_cleartrip/BOM-DEL/T+1/00_search_results.png';
+import checkoutReviewImg from '../assets/2026-09-23_23-21-54_cleartrip/BOM-DEL/T+1/01_checkout_review.png';
+
 const AuditModalContext = createContext();
 
 export const AuditModalProvider = ({ children }) => {
@@ -16,16 +19,33 @@ export const AuditModalProvider = ({ children }) => {
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [copilotInitialQuery, setCopilotInitialQuery] = useState('');
 
+  const CLEARTRIP_DEFAULT_SEARCH = searchResultsImg;
+  const CLEARTRIP_DEFAULT_REVIEW = checkoutReviewImg;
+
   // Handlers for Ground-Truth Audit
   const openAuditModal = useCallback((flightOrId) => {
+    let target = null;
     if (typeof flightOrId === 'string') {
       const found = auditedFlightsList.find(f => f.id === flightOrId || f.flightNumber === flightOrId);
-      setAuditFlight(found || auditedFlightsList[0]);
+      target = found || auditedFlightsList[0];
     } else if (flightOrId && typeof flightOrId === 'object') {
-      setAuditFlight(flightOrId);
+      target = flightOrId;
     } else {
-      setAuditFlight(auditedFlightsList[0]);
+      target = auditedFlightsList[0];
     }
+
+    const auditData = {
+      ...target,
+      screenshots: {
+        search: target?.screenshots?.search || CLEARTRIP_DEFAULT_SEARCH,
+        review: target?.screenshots?.review || CLEARTRIP_DEFAULT_REVIEW,
+        seatMap: target?.screenshots?.seatMap || CLEARTRIP_DEFAULT_REVIEW,
+        payment: target?.screenshots?.payment || CLEARTRIP_DEFAULT_REVIEW,
+      },
+      storagePath: target?.storagePath || 'runs/2026-09-23_23-21-54_cleartrip/BOM-DEL/T+1/'
+    };
+
+    setAuditFlight(auditData);
     setIsAuditOpen(true);
   }, []);
 

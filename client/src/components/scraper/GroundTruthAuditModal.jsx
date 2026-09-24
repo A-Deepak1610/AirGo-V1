@@ -11,9 +11,21 @@ import {
   Download
 } from 'lucide-react';
 
+import searchResultsImg from '../../assets/2026-09-23_23-21-54_cleartrip/BOM-DEL/T+1/00_search_results.png';
+import checkoutReviewImg from '../../assets/2026-09-23_23-21-54_cleartrip/BOM-DEL/T+1/01_checkout_review.png';
+
+const CLEARTRIP_SEARCH_IMG = searchResultsImg;
+const CLEARTRIP_REVIEW_IMG = checkoutReviewImg;
+
 export const GroundTruthAuditModal = ({ isOpen, onClose, flight = null }) => {
   const [activeStage, setActiveStage] = useState('review'); // 'search' | 'review' | 'seatMap' | 'payment'
   const [isZoomed, setIsZoomed] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setActiveStage('review');
+    }
+  }, [isOpen, flight]);
 
   if (!isOpen || !flight) return null;
 
@@ -23,28 +35,28 @@ export const GroundTruthAuditModal = ({ isOpen, onClose, flight = null }) => {
       label: '1. Search Results',
       subtitle: 'DOM Flight Matrix',
       icon: Layers,
-      image: flight.screenshots?.search
+      image: flight.screenshots?.search || CLEARTRIP_SEARCH_IMG
     },
     {
       id: 'review',
       label: '2. Checkout Review',
       subtitle: 'Price Disaggregation',
       icon: Camera,
-      image: flight.screenshots?.review
+      image: flight.screenshots?.review || CLEARTRIP_REVIEW_IMG
     },
     {
       id: 'seatMap',
       label: '3. Seat Selection',
-      subtitle: `Seat ${flight.selectedSeat || '31B'} (₹${flight.seatFee || 0})`,
+      subtitle: `Seat ${flight.selectedSeat || '14B'} (₹${flight.seatFee || 0})`,
       icon: ShieldCheck,
-      image: flight.screenshots?.seatMap
+      image: flight.screenshots?.seatMap || CLEARTRIP_REVIEW_IMG
     },
     {
       id: 'payment',
       label: '4. Payment Gateway',
       subtitle: 'Final Order Hash',
       icon: CreditCard,
-      image: flight.screenshots?.payment
+      image: flight.screenshots?.payment || CLEARTRIP_REVIEW_IMG
     }
   ];
 
@@ -219,14 +231,14 @@ export const GroundTruthAuditModal = ({ isOpen, onClose, flight = null }) => {
                   alt={currentStageObj.label}
                   className="w-full object-contain object-top"
                   onError={(e) => {
-                    // Fallback to local high-res visual placeholder card if static backend is unreachable
+                    // Fallback to local Cleartrip run images if backend static server is offline
                     e.target.onerror = null;
-                    e.target.src = 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80';
+                    e.target.src = activeStage === 'search' ? CLEARTRIP_SEARCH_IMG : CLEARTRIP_REVIEW_IMG;
                   }}
                 />
               ) : (
                 <div className="py-16 text-center text-slate-400 text-xs">
-                  Screenshot buffer saved in local run folder.
+                  Screenshot buffer saved in local run folder: runs/2026-09-23_23-21-54_cleartrip/
                 </div>
               )}
             </div>
@@ -247,9 +259,9 @@ export const GroundTruthAuditModal = ({ isOpen, onClose, flight = null }) => {
             </div>
 
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-0.5">
-              <span className="text-[11px] font-medium text-[#6B7280]">Selected Seat ({flight.selectedSeat || '31B'})</span>
+              <span className="text-[11px] font-medium text-[#6B7280]">Selected Seat ({flight.selectedSeat || '14B'})</span>
               <div className="text-lg font-semibold text-emerald-600 font-mono tabular-nums">₹{flight.seatFee || 0}</div>
-              <div className="text-[10px] font-mono text-[#6B7280] truncate">{flight.selectedSeatRawId || 'Standard Seat'}</div>
+              <div className="text-[10px] font-mono text-[#6B7280] truncate">{flight.selectedSeatRawId || 'Standard Saver Seat'}</div>
             </div>
 
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-0.5">
@@ -268,10 +280,10 @@ export const GroundTruthAuditModal = ({ isOpen, onClose, flight = null }) => {
           {/* Audit Trail Metadata Footnote */}
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-[#6B7280] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="font-mono">
-              Observation Timestamp: <strong className="text-[#111827]">{flight.capturedAt || '2026-09-06 17:30:25 UTC'}</strong>
+              Observation Timestamp: <strong className="text-[#111827]">{flight.capturedAt || '2026-09-23 23:21:54 IST'}</strong>
             </span>
             <span className="font-mono text-[11px]">
-              Storage: <strong className="text-blue-700">runs/2026-09-06_17-28-51_full_checkout_top1/</strong>
+              Storage: <strong className="text-blue-700">{flight.storagePath || 'runs/2026-09-23_23-21-54_cleartrip/BOM-DEL/T+1/'}</strong>
             </span>
           </div>
 
