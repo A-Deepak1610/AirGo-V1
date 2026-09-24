@@ -1,0 +1,30 @@
+{
+  "scraper": "Cleartrip",
+  "channel": "chrome_cdp",
+  "route": "BOM-DEL",
+  "horizons": [
+    "T+1"
+  ],
+  "total_quotes_captured": 5,
+  "run_completed_at": "2026-09-23T17:53:18.787631",
+  "horizon_details": [
+    {
+      "horizon": "T+1",
+      "travel_date": "2026-09-24",
+      "flights_found": 31,
+      "top_5_extracted": 5,
+      "min_price": 6472,
+      "max_price": 6523,
+      "representative_checkout_audit": {
+        "checkout_successful": true,
+        "base_fare": 4900,
+        "taxes": 1572,
+        "convenience_fee": null,
+        "total_fare": 6472,
+        "status": "success",
+        "notes": "Successfully extracted live base fare and taxes from checkout review."
+      }
+    }
+  ],
+  "run_folder": "C:\\Users\\deepa\\OneDrive\\Documents\\Desktop\\Visual Studio\\AirGo\\runs\\2026-09-23_23-21-54_cleartrip"
+}
