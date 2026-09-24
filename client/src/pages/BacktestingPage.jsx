@@ -35,7 +35,7 @@ export const BacktestingPage = () => {
     correlation_with_cpi: 0.942,
     tracking_error: 1.48,
     volatility_index: 3.45,
-    sample_days: 30
+    sample_days: 33
   });
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,7 +116,7 @@ export const BacktestingPage = () => {
         report: 'AirGo Econometric Backtest & Model Validation Audit',
         institution: 'Ministry of Statistics & Programme Implementation (MoSPI) / DGCA',
         generatedAt: new Date().toISOString(),
-        validationPeriod: `${backtestStats.sample_days} Calendar Days (August 01 – August 30, 2026)`,
+        validationPeriod: `${backtestStats.sample_days} Calendar Days (August 24 – September 25, 2026)`,
         summaryMetrics: {
           meanAbsolutePercentageError: `${backtestStats.mape_pct}%`,
           correlationWithCPITransport: backtestStats.correlation_with_cpi,
@@ -197,7 +197,7 @@ export const BacktestingPage = () => {
       {/* 1. Header with Reusable PageHeader */}
       <PageHeader
         title="Econometric Back-Testing & Model Validation"
-        description="Empirical 30-day longitudinal validation benchmarking real-time APIx against DGCA base tariffs (100.0) and MoSPI CPI Transport Sub-Index."
+        description="Empirical longitudinal validation (August 24 – September 25, 2026) benchmarking real-time APIx against DGCA base tariffs (100.0) and MoSPI CPI Transport Sub-Index."
         badge={
           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -279,21 +279,21 @@ export const BacktestingPage = () => {
           <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Validation Sample</p>
           <div className="mt-1 flex items-baseline gap-1.5">
             <span className="text-2xl font-bold tracking-tight text-slate-900 font-mono">{backtestStats.sample_days} Days</span>
-            <span className="text-xs font-medium text-slate-500">144k+ Quotes</span>
+            <span className="text-xs font-medium text-slate-500">Aug 24 – Sep 25</span>
           </div>
         </div>
       </div>
 
-      {/* 3. Main Trajectory Section: Clean Chart View + 30-Day Observation Table */}
+      {/* 3. Main Trajectory Section: Clean Chart View + Observation Table */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100">
           <div>
             <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
               <Scale className="w-4 h-4 text-blue-600" />
-              <span>30-Day Historical Index Trajectory Comparison</span>
+              <span>Historical Index Trajectory (August 24 – September 25, 2026)</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Real-Time APIx vs DGCA Base Tariff (100.0) and MoSPI CPI Transport Sub-Index.
+              Real-Time APIx vs DGCA Base Tariff (100.0) and MoSPI CPI Transport Sub-Index across 33 continuous days.
             </p>
           </div>
 
@@ -336,7 +336,7 @@ export const BacktestingPage = () => {
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  {h === '30d' ? '30 Days' : h === '15d' ? '15 Days' : '7 Days'}
+                  {h === '30d' ? 'Aug 24 – Sep 25 (All 33d)' : h === '15d' ? 'Last 15 Days' : 'Last 7 Days'}
                 </button>
               ))}
             </div>

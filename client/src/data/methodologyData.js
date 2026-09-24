@@ -16,29 +16,86 @@ export const METHODOLOGY_CONFIG = {
       step: 1,
       name: 'Data Collection & Verification',
       description: 'Headless browser automation captures ground-truth flight prices across 25 representative city-pairs at T+1, T+7, T+15, T+30, and T+45 days.',
-      formula: 'Obs_{r, h, c, t} = \\text{Raw Observed Quote}',
+      mathType: 'quote',
+      formula: 'Obs_{r, h, c, t} = Live Direct Quote',
       rules: ['Zero dummy data policy', 'Mandatory 4-step screenshot proof', 'Fail-fast on blocking']
     },
     {
       step: 2,
       name: 'Elementary Price Aggregation (Jevons)',
       description: 'Carrier quotes for each corridor and advance-purchase horizon are synthesized using unweighted geometric mean to eliminate volatility bias.',
-      formula: 'P_{r, h, t} = \\left( \\prod_{i=1}^{N} p_{r, h, i, t} \\right)^{1/N}',
+      mathType: 'jevons',
+      formula: 'P_{r, h, t} = ( ∏_{i=1}^{N} p_{r, h, i, t} )^{1/N}',
       rules: ['99th percentile winsorization', 'Geometric route imputation for canceled flights']
     },
     {
       step: 3,
       name: 'Lead-Time Horizon Weighting',
       description: 'Advance-purchase horizons are weighted by empirical booking volume shares derived from DGCA ticketing curves.',
-      formula: 'P_{r, t} = \\sum_{h \\in H} w_h \\cdot P_{r, h, t}',
+      mathType: 'horizon',
+      formula: 'P_{r, t} = ∑_{h ∈ H} w_h · P_{r, h, t}',
       rules: ['T+1: 18%', 'T+7: 24%', 'T+15: 32%', 'T+30: 16%', 'T+45: 10%']
     },
     {
       step: 4,
       name: 'National Route Basket Synthesis (Laspeyres)',
       description: 'The national headline index aggregates all 25 corridor price relatives weighted by passenger traffic volume within the basket.',
-      formula: 'APIx_t = \\frac{\\sum_{r=1}^{M} W_r \\cdot P_{r, t}}{\\sum_{r=1}^{M} W_r \\cdot P_{r, 0}} \\times 100',
-      rules: ['Weights normalized to \\sum W_r = 1.0', 'Base 2024=100.0']
+      mathType: 'laspeyres',
+      formula: 'APIx_t = [ ∑ W_r · P_{r, t} / ∑ W_r · P_{r, 0} ] × 100',
+      rules: ['Weights normalized to ∑ W_r = 1.0', 'Base FY 2024-25 = 100.0']
+    }
+  ],
+
+  mathSpecifications: [
+    {
+      id: 'laspeyres_national',
+      title: 'National Headline Laspeyres Route Aggregator',
+      badge: 'Primary Formula',
+      mathType: 'laspeyres',
+      purpose: 'Aggregates all 25 representative domestic corridors into the single national price index, using fixed base-period passenger traffic weights (FY 2024-25).',
+      formulaText: 'APIx(t) = [ ∑(W_r · P_{r,t}) / ∑(W_r · P_{r,0}) ] × 100',
+      variables: [
+        { symbol: 'W_r', label: 'Route Passenger Weight', desc: 'DGCA annual scheduled domestic passenger density normalized so that ∑ W_r = 1.0.' },
+        { symbol: 'P_{r,t}', label: 'Corridor Price at Time t', desc: 'Multi-horizon weighted consumer price observed for route r at period t.' },
+        { symbol: 'P_{r,0}', label: 'Base Period Benchmark Tariff', desc: 'Fixed base reference tariff for corridor r established in baseline FY 2024-25 (Index = 100.0).' },
+        { symbol: 'M', label: 'Basket Size', desc: '25 representative trunk, metro-to-non-metro, and regional tourist corridors.' }
+      ]
+    },
+    {
+      id: 'jevons_elementary',
+      title: 'Jevons Geometric Elementary Price Aggregator',
+      badge: 'Micro Level',
+      mathType: 'jevons',
+      purpose: 'Synthesizes all individual airline quotes captured within a single corridor and advance-purchase horizon to eliminate arithmetic upward substitution bias.',
+      formulaText: 'P_{r,h,t} = ( ∏_{i=1}^{N} p_{r,h,i,t} )^{1/N}',
+      variables: [
+        { symbol: 'p_{r,h,i,t}', label: 'Carrier Observed Quote', desc: 'Direct fare extracted for airline i on route r at advance horizon h during batch t.' },
+        { symbol: 'N', label: 'Observation Count', desc: 'Number of active non-winsorized carrier observations captured in the harvesting cycle.' }
+      ]
+    },
+    {
+      id: 'horizon_weighting',
+      title: 'Multi-Horizon Advance Purchase Curve Synthesis',
+      badge: 'Lead-Time Integration',
+      mathType: 'horizon',
+      purpose: 'Blends elementary price indexes across 5 distinct booking horizons using passenger reservation lead-time probability distributions.',
+      formulaText: 'P_{r,t} = ∑_{h ∈ H} w_h · P_{r,h,t}',
+      variables: [
+        { symbol: 'w_h', label: 'Horizon Density Weight', desc: 'Empirical domestic booking density: T+1 (18%), T+7 (24%), T+15 (32%), T+30 (16%), T+45 (10%).' },
+        { symbol: 'H', label: 'Horizon Set', desc: '{T+1, T+7, T+15, T+30, T+45} tracking urgent, weekly, fortnight, monthly, and advance leisure.' }
+      ]
+    },
+    {
+      id: 'fisher_ideal',
+      title: 'Superlative Fisher Ideal Validation Formulation',
+      badge: 'Axiomatic Cross-Check',
+      mathType: 'fisher',
+      purpose: 'Geometric mean of base-weighted Laspeyres and current-weighted Paasche indexes, satisfying time-reversal and circularity tests for econometric certification.',
+      formulaText: 'F_t = √( L_t × P_t )',
+      variables: [
+        { symbol: 'L_t', label: 'Laspeyres Index', desc: 'Base-period quantity weighted airfare index number.' },
+        { symbol: 'P_t', label: 'Paasche Index', desc: 'Current-period traffic weighted airfare index number.' }
+      ]
     }
   ],
 
