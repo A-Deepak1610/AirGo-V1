@@ -43,6 +43,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import os
+from fastapi.staticfiles import StaticFiles
+
+runs_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "runs"))
+if os.path.exists(runs_dir):
+    app.mount("/runs", StaticFiles(directory=runs_dir), name="runs")
+
 
 @app.get("/health", status_code=status.HTTP_200_OK, tags=["Health"])
 def health_check():

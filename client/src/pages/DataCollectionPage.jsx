@@ -48,6 +48,7 @@ export const DataCollectionPage = () => {
 
   // Recent extraction runs
   const recentRuns = [
+    { id: 'RUN-2026-09-23_23-21-54', source: 'Cleartrip Engine', sector: 'BOM-DEL', ap: 'T+1', quotes: 5, latency: '4.2s', status: 'SUCCESS (200 OK)', timestamp: '23:21:54' },
     { id: 'RUN-20260906-0814', source: 'EaseMyTrip Harvester', sector: 'DEL-BOM', ap: 'T+1, T+7, T+15, T+30, T+45', quotes: 68, latency: '3.8s', status: 'SUCCESS (200 OK)', timestamp: '20:45:12' },
     { id: 'RUN-20260906-0813', source: 'IndiGo Direct TLS', sector: 'BLR-DEL', ap: 'T+1, T+7, T+15, T+30', quotes: 54, latency: '4.1s', status: 'SUCCESS (200 OK)', timestamp: '20:44:05' },
     { id: 'RUN-20260906-0812', source: 'Air India Harvester', sector: 'BOM-BLR', ap: 'T+1, T+7, T+15, T+45', quotes: 46, latency: '4.6s', status: 'SUCCESS (200 OK)', timestamp: '20:42:30' },
@@ -451,9 +452,12 @@ export const DataCollectionPage = () => {
               <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold font-mono">
                 ZERO DUMMY DATA
               </span>
+              <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold font-mono">
+                RUN: 2026-09-23_23-21-54_cleartrip
+              </span>
             </div>
             <p className="text-xs sm:text-[13px] font-normal text-[#4B5563] mt-0.5">
-              Authentic quotes captured directly from live OTA / airline checkout pages with complete fare disaggregation and screenshot audits.
+              Live ground-truth quotes captured directly from Cleartrip Chrome CDP harvest (BOM-DEL T+1) with screenshot audit trails.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -513,7 +517,7 @@ export const DataCollectionPage = () => {
                   </td>
                   <td className="py-3 px-4">
                     <span className="inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 border border-slate-200 font-medium text-slate-800">
-                      Seat {f.selectedSeat || '31B'} (₹{f.seatFee || 0})
+                      Seat {f.selectedSeat || '14B'} (₹{f.seatFee || 0})
                     </span>
                   </td>
                   <td className="py-3 px-4">
