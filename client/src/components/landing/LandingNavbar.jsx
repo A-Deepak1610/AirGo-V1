@@ -1,79 +1,164 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Menu, X, ExternalLink } from "lucide-react";
 
 export const LandingNavbar = () => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 15);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const navLinks = [
+    { name: "The Challenge", href: "#challenge" },
+    { name: "How It Works", href: "#how-it-works" },
+    { name: "AI Insights", href: "#ai-insights", hasSparkle: true },
+    { name: "Capabilities", href: "#capabilities" },
+    { name: "Roadmap", href: "#roadmap" },
+  ];
+
+  const handleNavClick = (e, href) => {
+    e.preventDefault();
+    setMobileMenuOpen(false);
+    const target = document.querySelector(href);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <header
-      className={`sticky top-0 z-40 w-full transition-all duration-200 ${
+      className={`sticky top-0 z-50 w-full transition-all duration-200 ${
         isScrolled
-          ? "bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs"
-          : "bg-white border-b border-slate-200/60"
+          ? "bg-white/95 backdrop-blur-md border-b border-slate-200/90 shadow-xs"
+          : "bg-white/90 backdrop-blur-sm border-b border-slate-200/60"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-        {/* Brand Logo matching screenshot: AG black badge + AirGo + Airfare Index Platform */}
-        <div
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="flex items-center gap-3 cursor-pointer group"
-        >
-          <div className="w-9 h-9 rounded-xl bg-slate-950 text-white flex items-center justify-center font-bold text-xs tracking-wider shadow-xs group-hover:bg-blue-600 transition-colors">
-            AG
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-900 text-base tracking-tight whitespace-nowrap">
-                AirGo
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 font-medium leading-none mt-0.5 whitespace-nowrap">
-              Airfare Index Platform
-            </p>
-          </div>
-        </div>
-
-        {/* Narrative Links matching screenshot */}
-        <nav className="hidden md:flex items-center gap-7 text-[13px] font-medium text-slate-600">
-          <a href="#challenge" className="hover:text-slate-900 transition-colors">
-            The Challenge
-          </a>
-          <a href="#how-it-works" className="hover:text-slate-900 transition-colors">
-            How It Works
-          </a>
-          <a href="#ai-insights" className="inline-flex items-center gap-1.5 hover:text-slate-900 transition-colors">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>AI Insights</span>
-          </a>
-          <a href="#capabilities" className="hover:text-slate-900 transition-colors">
-            Capabilities
-          </a>
-          <a href="#roadmap" className="hover:text-slate-900 transition-colors">
-            Roadmap
-          </a>
-        </nav>
-
-        {/* Action CTA matching screenshot: Blue button Explore Dashboard */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs hover:shadow transition-all cursor-pointer group"
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 py-1.5 sm:py-2">
+          {/* Brand Logo */}
+          <div
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none"
           >
-            <span>Explore Dashboard</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </button>
+            <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-lg bg-slate-950 text-white flex items-center justify-center font-bold text-xs sm:text-sm tracking-wider shadow-xs group-hover:bg-blue-600 transition-colors">
+              AG
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight group-hover:text-blue-600 transition-colors whitespace-nowrap">
+                  AirGo
+                </span>
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                  APIx
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-none mt-0.5 whitespace-nowrap">
+                India Airfare Price Index Platform
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-6 text-[13px] font-medium text-slate-600">
+            {navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className={`py-1 transition-colors hover:text-blue-600 ${
+                  link.hasSparkle ? "inline-flex items-center gap-1 text-blue-600 font-semibold" : ""
+                }`}
+              >
+                {link.hasSparkle && <Sparkles className="w-3.5 h-3.5 text-blue-600" />}
+                <span>{link.name}</span>
+              </a>
+            ))}
+            <button
+              onClick={() => navigate("/index-methodology")}
+              className="py-1 text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              Methodology
+            </button>
+          </nav>
+
+          {/* Action CTA & Mobile Hamburger */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs sm:text-[13px] font-medium shadow-xs hover:shadow transition-all cursor-pointer group whitespace-nowrap"
+            >
+              <span>Explore Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+
+            {/* Mobile Toggle Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-4.5 h-4.5" /> : <Menu className="w-4.5 h-4.5" />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden border-t border-slate-200/80 bg-white/98 backdrop-blur-md px-4 sm:px-6 py-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="flex flex-col gap-2">
+            {navLinks.map((link) => (
+              <a
+                key={link.name}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50/70 transition-colors"
+              >
+                {link.hasSparkle && <Sparkles className="w-4 h-4 text-blue-600" />}
+                <span>{link.name}</span>
+              </a>
+            ))}
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate("/index-methodology");
+              }}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:text-blue-600 hover:bg-blue-50/70 transition-colors text-left"
+            >
+              Methodology & Formulas
+            </button>
+            <div className="pt-2 mt-1 border-t border-slate-100 flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/index-apix");
+                }}
+                className="flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <span>Live Route Index (APIx)</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/data-collection");
+                }}
+                className="flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+              >
+                <span>Live Data Collection & Proof</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
