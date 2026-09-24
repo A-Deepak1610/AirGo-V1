@@ -41,39 +41,39 @@ export const LandingNavbar = () => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 py-2 sm:py-3">
+        <div className="flex items-center justify-between h-14 sm:h-16 py-1.5 sm:py-2">
           {/* Brand Logo */}
           <div
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="flex items-center gap-3 cursor-pointer group select-none"
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group select-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-slate-950 text-white flex items-center justify-center font-bold text-sm tracking-wider shadow-sm group-hover:bg-blue-600 transition-colors">
+            <div className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-lg bg-slate-950 text-white flex items-center justify-center font-bold text-xs sm:text-sm tracking-wider shadow-xs group-hover:bg-blue-600 transition-colors">
               AG
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900 text-base sm:text-lg tracking-tight group-hover:text-blue-600 transition-colors whitespace-nowrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight group-hover:text-blue-600 transition-colors whitespace-nowrap">
                   AirGo
                 </span>
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
                   APIx
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-medium leading-none mt-0.5 whitespace-nowrap">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-none mt-0.5 whitespace-nowrap">
                 India Airfare Price Index Platform
               </p>
             </div>
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-7 text-[13px] font-medium text-slate-600">
+          <nav className="hidden lg:flex items-center gap-6 text-[13px] font-medium text-slate-600">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
-                className={`py-1.5 transition-colors hover:text-blue-600 ${
-                  link.hasSparkle ? "inline-flex items-center gap-1.5 text-blue-600 font-semibold" : ""
+                className={`py-1 transition-colors hover:text-blue-600 ${
+                  link.hasSparkle ? "inline-flex items-center gap-1 text-blue-600 font-semibold" : ""
                 }`}
               >
                 {link.hasSparkle && <Sparkles className="w-3.5 h-3.5 text-blue-600" />}
@@ -82,29 +82,29 @@ export const LandingNavbar = () => {
             ))}
             <button
               onClick={() => navigate("/index-methodology")}
-              className="py-1.5 text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
+              className="py-1 text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
             >
               Methodology
             </button>
           </nav>
 
           {/* Action CTA & Mobile Hamburger */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <button
               onClick={() => navigate("/dashboard")}
-              className="flex items-center gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs sm:text-sm font-semibold shadow-xs hover:shadow transition-all cursor-pointer group whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs sm:text-[13px] font-medium shadow-xs hover:shadow transition-all cursor-pointer group whitespace-nowrap"
             >
               <span>Explore Dashboard</span>
-              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-0.5 transition-transform" />
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </button>
 
             {/* Mobile Toggle Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="lg:hidden p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
               aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-4.5 h-4.5" /> : <Menu className="w-4.5 h-4.5" />}
             </button>
           </div>
         </div>
