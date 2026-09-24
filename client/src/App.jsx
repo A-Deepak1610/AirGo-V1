@@ -19,6 +19,7 @@ import { SystemStatusPage } from './pages/SystemStatusPage';
 // 10 New Institutional Pages
 import { SourceCatalogPage } from './pages/SourceCatalogPage';
 import { ScrapingRunsPage } from './pages/ScrapingRunsPage';
+import { AiHealingScraperPage } from './pages/AiHealingScraperPage';
 import { RouteBasketPage } from './pages/RouteBasketPage';
 import { DataQualityPage } from './pages/DataQualityPage';
 import { IndexMethodologyPage } from './pages/IndexMethodologyPage';
@@ -74,6 +75,7 @@ function AppLayout() {
             {/* 10 Institutional Expansion Routes */}
             <Route path="/source-catalog" element={<SourceCatalogPage />} />
             <Route path="/scraping-runs" element={<ScrapingRunsPage />} />
+            <Route path="/ai-healing-scrapers" element={<AiHealingScraperPage />} />
             <Route path="/route-basket" element={<RouteBasketPage />} />
             <Route path="/data-quality" element={<DataQualityPage />} />
             <Route path="/index-methodology" element={<IndexMethodologyPage />} />
@@ -106,6 +108,9 @@ function AppLayout() {
             <Route path="/anomaly-detection" element={<Navigate to="/data-quality" replace />} />
             <Route path="/data-sources" element={<Navigate to="/source-catalog" replace />} />
             <Route path="/scraping-monitor" element={<Navigate to="/scraping-runs" replace />} />
+            <Route path="/ai-scraper-manager" element={<Navigate to="/ai-healing-scrapers" replace />} />
+            <Route path="/scraper-manager" element={<Navigate to="/ai-healing-scrapers" replace />} />
+            <Route path="/self-healing" element={<Navigate to="/ai-healing-scrapers" replace />} />
             <Route path="/historical-data" element={<Navigate to="/backtesting" replace />} />
             <Route path="/govt-reports" element={<Navigate to="/reports-exports" replace />} />
             <Route path="/export-centre" element={<Navigate to="/reports-exports" replace />} />

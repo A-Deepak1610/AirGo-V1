@@ -1,56 +1,43 @@
-import React, { useEffect } from 'react';
-import { LandingNavbar } from '../components/landing/LandingNavbar';
-import { LandingHero } from '../components/landing/LandingHero';
-import { LandingStory } from '../components/landing/LandingStory';
-import { DataGapSection } from '../components/landing/DataGapSection';
-import { NoiseToSignalSection } from '../components/landing/NoiseToSignalSection';
-import { PlatformPhilosophy } from '../components/landing/PlatformPhilosophy';
-import { IndexIntroduction } from '../components/landing/IndexIntroduction';
-import { HumanJourneySection } from '../components/landing/HumanJourneySection';
-import { AbstractTechSection } from '../components/landing/AbstractTechSection';
-import { FeatureNavigation } from '../components/landing/FeatureNavigation';
-import { LandingCTA } from '../components/landing/LandingCTA';
+import React, { useEffect } from "react";
+import { LandingNavbar } from "../components/landing/LandingNavbar";
+import { LandingHero } from "../components/landing/LandingHero";
+import { DataGapSection } from "../components/landing/DataGapSection";
+import { HowItWorksSection } from "../components/landing/HowItWorksSection";
+import { AiInsightsSection } from "../components/landing/AiInsightsSection";
+import { CapabilitiesSection } from "../components/landing/CapabilitiesSection";
+import { RoadmapSection } from "../components/landing/RoadmapSection";
+import { LandingCTA } from "../components/landing/LandingCTA";
 
 export const LandingPage = () => {
   useEffect(() => {
-    document.title = "Airfare Intelligence Platform · Real-time Airfare Price Index (APIx) for India";
+    document.title = "AirGo · India Airfare Price Index Platform";
   }, []);
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white">
-      {/* 1. Editorial Institutional Navbar */}
+      {/* 1. Header Navigation */}
       <LandingNavbar />
 
-      {/* 2. Full-Screen Cinematic Hero with Exclusive 3D India Flight Network */}
+      {/* 2. Interactive Reference Hero Section */}
       <LandingHero />
 
-      {/* 3. Storytelling Progression: Every Fare Tells a Story (T+45 to T+1) */}
-      <LandingStory />
-
-      {/* 4. The Data Gap: Traditional Collection vs Real-World Airfare */}
+      {/* 3. The Challenge (The Measurement Blindspot) */}
       <DataGapSection />
 
-      {/* 5. From Noise to Signal: Interactive Convergence of Floating Quotes */}
-      <NoiseToSignalSection />
+      {/* 4. How It Works (End-to-End Extraction & Advance Purchase Pipeline) */}
+      <HowItWorksSection />
 
-      {/* 6. Platform Philosophy: Capture · Normalize · Understand */}
-      <PlatformPhilosophy />
+      {/* 5. AI Insights (Explainable Macro Driver Decomposition) */}
+      <AiInsightsSection />
 
-      {/* 7. Airfare Price Index Conceptual Introduction with Abstract Wave */}
-      <IndexIntroduction />
+      {/* 6. Capabilities & Functional Modules (APIx, Backtesting, Corridors, Self-Healing) */}
+      <CapabilitiesSection />
 
-      {/* 8. Human-Centric Perspective: Behind Every Data Point is a Journey */}
-      <HumanJourneySection />
+      {/* 7. Roadmap & Institutional Standards */}
+      <RoadmapSection />
 
-      {/* 9. Abstract Technology Foundation */}
-      <AbstractTechSection />
-
-      {/* 10. Destination Directory: Feature Discovery Links */}
-      <FeatureNavigation />
-
-      {/* 11. Final Statement CTA & Minimal Editorial Footer */}
+      {/* 8. Bottom Statement & Comprehensive Footer */}
       <LandingCTA />
     </div>
   );
 };
-

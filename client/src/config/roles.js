@@ -15,7 +15,8 @@ import {
   FileSpreadsheet,
   Key,
   ScrollText,
-  Users
+  Users,
+  Sparkles
 } from 'lucide-react';
 
 export const ALL_NAVIGATION_ITEMS = [
@@ -25,6 +26,7 @@ export const ALL_NAVIGATION_ITEMS = [
   // DATA
   { id: 'data_collection', label: 'Data Collection', icon: Database, path: '/data-collection', section: 'DATA' },
   { id: 'scraping_runs', label: 'Scraping Runs', icon: PlayCircle, path: '/scraping-runs', section: 'DATA', badge: '1.2k' },
+  { id: 'ai_healing_scrapers', label: 'AI Healing Scrapers', icon: Sparkles, path: '/ai-healing-scrapers', section: 'DATA', badge: 'AI Auto-Heal' },
   { id: 'airfare_data', label: 'Airfare Data', icon: Receipt, path: '/airfare-data', section: 'DATA' },
   { id: 'data_quality', label: 'Data Quality', icon: ShieldCheck, path: '/data-quality', section: 'DATA', badge: '7 alerts' },
   { id: 'source_catalog', label: 'Source Catalog', icon: Layers, path: '/source-catalog', section: 'DATA' },
@@ -61,6 +63,7 @@ export const USER_ROLES = {
       '/dashboard',
       '/data-collection',
       '/scraping-runs',
+      '/ai-healing-scrapers',
       '/airfare-data',
       '/data-quality',
       '/source-catalog',
@@ -80,6 +83,8 @@ export const USER_ROLES = {
       canManageUsers: true,
       canConfigureSources: true,
       canTriggerScraping: true,
+      canTriggerHealing: true,
+      canDeployScraperPatches: true,
       canInvestigateFailures: true,
       canRemediateDataQuality: true,
       canConfigureMethodology: true,
@@ -105,6 +110,7 @@ export const USER_ROLES = {
       '/dashboard',
       '/data-collection',
       '/scraping-runs',
+      '/ai-healing-scrapers',
       '/airfare-data',
       '/data-quality',
       '/source-catalog',
@@ -116,6 +122,8 @@ export const USER_ROLES = {
       canManageUsers: false,
       canConfigureSources: true,
       canTriggerScraping: true,
+      canTriggerHealing: true,
+      canDeployScraperPatches: true,
       canInvestigateFailures: true,
       canRemediateDataQuality: true,
       canConfigureMethodology: false,
@@ -139,6 +147,7 @@ export const USER_ROLES = {
     description: 'Empowered to query observed flight quotes, run elasticity analyses, configure index weights, and generate reports.',
     allowedPathPrefixes: [
       '/dashboard',
+      '/ai-healing-scrapers',
       '/airfare-data',
       '/data-quality',
       '/index-apix',
@@ -152,6 +161,8 @@ export const USER_ROLES = {
       canManageUsers: false,
       canConfigureSources: false,
       canTriggerScraping: false,
+      canTriggerHealing: false,
+      canDeployScraperPatches: false,
       canInvestigateFailures: false,
       canRemediateDataQuality: false,
       canConfigureMethodology: true,
@@ -175,6 +186,7 @@ export const USER_ROLES = {
     description: 'Review-oriented authority to validate price anomalies, certify official APIx index releases, and inspect compliance audits.',
     allowedPathPrefixes: [
       '/dashboard',
+      '/ai-healing-scrapers',
       '/airfare-data',
       '/data-quality',
       '/index-apix',
@@ -189,6 +201,8 @@ export const USER_ROLES = {
       canManageUsers: false,
       canConfigureSources: false,
       canTriggerScraping: false,
+      canTriggerHealing: false,
+      canDeployScraperPatches: false,
       canInvestigateFailures: false,
       canRemediateDataQuality: true,
       canConfigureMethodology: false,

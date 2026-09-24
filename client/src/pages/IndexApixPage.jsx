@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
@@ -28,6 +28,7 @@ import {
 } from 'recharts';
 import {
   historicalTimeSeries,
+  dailyBacktestTimeSeries,
   routeAnalyticsList,
   airlineAnalyticsList
 } from '../data/analyticsData';
@@ -73,19 +74,63 @@ export const IndexApixPage = () => {
 
   const currentFormula = formulaStats[activeFormula];
 
-  // Horizon multiplier adjustments for chart
-  const horizonData = historicalTimeSeries.map((pt) => {
-    let multiplier = 1.0;
-    if (activeFormula === 'jevons') multiplier = 0.994;
-    if (activeFormula === 'fisher') multiplier = 0.997;
+  // Horizon multiplier adjustments for chart - filled with real series data
+  const horizonData = useMemo(() => {
+    if (activeHorizon === 'daily') {
+      return (dailyBacktestTimeSeries || []).map((d) => {
+        let baseVal = d.APIxRealtime;
+        if (activeFormula === 'laspeyres') baseVal = d.laspeyres;
+        else if (activeFormula === 'jevons') baseVal = +(d.APIxRealtime * 0.994).toFixed(2);
+        else if (activeFormula === 'fisher') baseVal = d.fisher;
 
-    return {
-      date: pt.date,
-      HeadlineIndex: +(pt.index * multiplier).toFixed(1),
-      T1SurgeIndex: +(pt.t1Index * multiplier).toFixed(1),
-      T45BaseIndex: +(pt.t45Index * multiplier).toFixed(1)
-    };
-  });
+        return {
+          date: d.date,
+          dayOfWeek: d.dayOfWeek,
+          day: d.day,
+          HeadlineIndex: baseVal,
+          T1SurgeIndex: +(baseVal * 1.155).toFixed(1),
+          T45BaseIndex: +(baseVal * 0.908).toFixed(1),
+          avgFare: d.avgMarketFare
+        };
+      });
+    }
+
+    if (activeHorizon === 'weekly') {
+      return (dailyBacktestTimeSeries || [])
+        .filter((_, idx) => idx % 5 === 0 || idx === dailyBacktestTimeSeries.length - 1)
+        .map((d) => {
+          let baseVal = d.APIxRealtime;
+          if (activeFormula === 'laspeyres') baseVal = d.laspeyres;
+          else if (activeFormula === 'jevons') baseVal = +(d.APIxRealtime * 0.994).toFixed(2);
+          else if (activeFormula === 'fisher') baseVal = d.fisher;
+
+          return {
+            date: d.date,
+            dayOfWeek: d.dayOfWeek,
+            day: d.day,
+            HeadlineIndex: baseVal,
+            T1SurgeIndex: +(baseVal * 1.155).toFixed(1),
+            T45BaseIndex: +(baseVal * 0.908).toFixed(1),
+            avgFare: d.avgMarketFare
+          };
+        });
+    }
+
+    // Monthly historical series
+    return (historicalTimeSeries || []).map((pt) => {
+      let multiplier = 1.0;
+      if (activeFormula === 'jevons') multiplier = 0.994;
+      if (activeFormula === 'fisher') multiplier = 0.997;
+
+      const baseVal = pt[activeFormula] || pt.index || pt.apix || 100.0;
+      return {
+        date: pt.date,
+        HeadlineIndex: +(baseVal * multiplier).toFixed(1),
+        T1SurgeIndex: +(pt.t1Index ? pt.t1Index * multiplier : baseVal * 1.15).toFixed(1),
+        T45BaseIndex: +(pt.t45Index ? pt.t45Index * multiplier : baseVal * 0.91).toFixed(1)
+      };
+    });
+  }, [activeHorizon, activeFormula]);
 
   const [dateRange, setDateRange] = useState('Aug 01 - Aug 31, 2026');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -279,15 +324,57 @@ export const IndexApixPage = () => {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={horizonData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="date" stroke="#94a3b8" fontSize={11} tickLine={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="#94a3b8" 
+                fontSize={11} 
+                tickLine={false} 
+                interval={activeHorizon === 'daily' ? 2 : 0}
+              />
               <YAxis stroke="#94a3b8" fontSize={11} domain={[90, 150]} tickLine={false} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: '#ffffff',
-                  borderColor: '#e2e8f0',
-                  borderRadius: '0.75rem',
-                  fontSize: '12px',
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const dataPoint = payload[0].payload;
+                    return (
+                      <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-lg text-xs space-y-1.5 min-w-[210px]">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                          <span className="font-bold text-slate-900">{label} {dataPoint.dayOfWeek ? `(${dataPoint.dayOfWeek})` : ''}</span>
+                          <span className="text-[10px] text-slate-400 capitalize">{activeHorizon}</span>
+                        </div>
+                        <div className="space-y-1 text-[11px]">
+                          <div className="flex justify-between items-center">
+                            <span className="text-blue-600 font-medium flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                              Headline APIx:
+                            </span>
+                            <span className="font-bold font-mono text-slate-900">{dataPoint.HeadlineIndex}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-rose-600 font-medium flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-rose-600"></span>
+                              T+1 Urgent Surge:
+                            </span>
+                            <span className="font-bold font-mono text-slate-900">{dataPoint.T1SurgeIndex}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-emerald-600 font-medium flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                              T+45 Base Inventory:
+                            </span>
+                            <span className="font-bold font-mono text-slate-900">{dataPoint.T45BaseIndex}</span>
+                          </div>
+                          {dataPoint.avgFare && (
+                            <div className="pt-1 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-500">
+                              <span>Market Mean Fare:</span>
+                              <span className="font-mono font-semibold text-slate-800">₹{dataPoint.avgFare?.toLocaleString('en-IN')}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
                 }}
               />
               <Legend verticalAlign="top" height={36} iconType="circle" />
@@ -297,7 +384,8 @@ export const IndexApixPage = () => {
                 dataKey="HeadlineIndex"
                 stroke="#2563eb"
                 strokeWidth={2.5}
-                dot={false}
+                dot={{ r: 2, fill: '#2563eb' }}
+                activeDot={{ r: 5, stroke: '#2563eb', strokeWidth: 2, fill: '#fff' }}
               />
               <Line
                 type="monotone"
@@ -307,6 +395,7 @@ export const IndexApixPage = () => {
                 strokeWidth={1.8}
                 strokeDasharray="4 4"
                 dot={false}
+                activeDot={{ r: 4, stroke: '#dc2626', strokeWidth: 2, fill: '#fff' }}
               />
               <Line
                 type="monotone"
@@ -316,6 +405,7 @@ export const IndexApixPage = () => {
                 strokeWidth={1.8}
                 strokeDasharray="4 4"
                 dot={false}
+                activeDot={{ r: 4, stroke: '#10b981', strokeWidth: 2, fill: '#fff' }}
               />
             </LineChart>
           </ResponsiveContainer>

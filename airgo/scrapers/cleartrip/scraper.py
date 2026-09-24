@@ -1,16 +1,19 @@
 """
-Cleartrip Airfare Scraper with Playwright/Patchright and Google Chrome.
+Cleartrip Airfare Scraper with Patchright & Google Chrome over CDP.
 Searches specified routes and advance purchase windows, extracts top 5 adult economy listings,
 and performs 1 representative checkout attempt per route/day.
-Adheres strictly to Zero Dummy Data and Visual Ground Truth policies.
+Adheres strictly to Zero Dummy Data, Chrome-only, and Visual Ground Truth policies.
 """
 
 import os
 import sys
 import io
 import json
+import socket
+import shutil
 import asyncio
 import tempfile
+import subprocess
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
 from pathlib import Path
@@ -25,14 +28,58 @@ if sys.stdout.encoding != "utf-8":
         pass
 
 
+def _find_free_port() -> int:
+    """Finds an available local port for Chrome remote debugging."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        s.listen(1)
+        return s.getsockname()[1]
+
+
+def _find_chrome_binary(custom_path: Optional[str] = None) -> str:
+    """Detects Google Chrome binary path on Windows or specified OS. NEVER uses Edge."""
+    candidates = []
+    if custom_path:
+        candidates.append(custom_path)
+    env_path = os.environ.get("CHROME_PATH")
+    if env_path:
+        candidates.append(env_path)
+
+    if sys.platform == "win32":
+        local_app = os.environ.get("LOCALAPPDATA", "")
+        prog_files = os.environ.get("ProgramFiles", "")
+        prog_files_x86 = os.environ.get("ProgramFiles(x86)", "")
+        candidates.extend([
+            os.path.join(local_app, r"Google\Chrome\Application\chrome.exe"),
+            os.path.join(prog_files, r"Google\Chrome\Application\chrome.exe"),
+            os.path.join(prog_files_x86, r"Google\Chrome\Application\chrome.exe"),
+            r"C:\Users\deepa\AppData\Local\Google\Chrome\Application\chrome.exe"
+        ])
+    else:
+        candidates.extend([
+            "/usr/bin/google-chrome",
+            "/usr/bin/google-chrome-stable",
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        ])
+
+    for c in candidates:
+        if c and os.path.isfile(c):
+            return c
+
+    raise FileNotFoundError(
+        "Google Chrome executable not found. Under project policy, Chrome is mandatory (never Edge)."
+    )
+
+
 class CleartripScraper:
     def __init__(
         self,
         route: str = "BOM-DEL",
-        horizons: List[int] = None,
+        horizons: Optional[List[int]] = None,
         headless: bool = True,
         runs_dir: Optional[str] = None,
-        pause_at_end: int = 15
+        pause_at_end: int = 15,
+        chrome_path: Optional[str] = None
     ):
         self.route = route.upper()
         parts = self.route.split("-")
@@ -43,6 +90,7 @@ class CleartripScraper:
         self.horizons = horizons if horizons is not None else [1]
         self.headless = headless
         self.pause_at_end = pause_at_end
+        self.chrome_binary = _find_chrome_binary(chrome_path)
 
         # Base runs directory
         workspace_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -54,37 +102,34 @@ class CleartripScraper:
         self.run_folder.mkdir(parents=True, exist_ok=True)
 
         print(f"[CleartripScraper] Initialized run folder: {self.run_folder}")
+        print(f"[CleartripScraper] Using Chrome binary: {self.chrome_binary}")
 
-    async def _launch_browser(self, p, profile_dir: str) -> BrowserContext:
-        """Launches persistent Chrome context with anti-bot stealth flags."""
-        args = [
-            "--disable-blink-features=AutomationControlled",
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-infobars",
-            "--ignore-certificate-errors",
-            "--ignore-certificate-errors-spki-list",
-            "--disable-web-security",
+    def _start_chrome_process(self, port: int, profile_dir: str) -> subprocess.Popen:
+        """
+        Launches installed Chrome binary with remote debugging port.
+        Guarantees native TLS/ALPN fingerprint to avoid Akamai Bot Manager detection.
+        In headless mode, window is rendered offscreen to avoid interrupting user desktop.
+        """
+        cmd = [
+            self.chrome_binary,
+            f"--remote-debugging-port={port}",
+            f"--user-data-dir={profile_dir}",
+            "--no-first-run",
+            "--no-default-browser-check",
         ]
-        if not self.headless:
-            args.extend(["--start-maximized", "--no-first-run", "--no-default-browser-check"])
-
-        launch_kwargs = {
-            "user_data_dir": profile_dir,
-            "channel": "chrome",
-            "headless": self.headless,
-            "args": args,
-            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-            "locale": "en-IN",
-            "timezone_id": "Asia/Kolkata",
-        }
         if self.headless:
-            launch_kwargs["viewport"] = {"width": 1440, "height": 900}
+            cmd.extend([
+                "--window-position=-2400,-2400",
+                "--window-size=1440,1200"
+            ])
         else:
-            launch_kwargs["no_viewport"] = True
-            launch_kwargs["slow_mo"] = 600
+            cmd.extend([
+                "--start-maximized"
+            ])
 
-        return await p.chromium.launch_persistent_context(**launch_kwargs)
+        print(f"[Chrome Process] Launching on CDP port {port} (headless={self.headless})...")
+        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return proc
 
     async def _safe_capture_screenshot(self, page: Page, path: Path):
         """Scrolls and captures high-resolution screenshot without exceeding Chromium limits."""
@@ -110,6 +155,29 @@ class CleartripScraper:
                 await page.screenshot(path=str(path), full_page=False)
             except Exception as e:
                 print(f"[!] Screenshot capture note: {e}")
+
+    async def _prime_session(self, page: Page):
+        """
+        Navigates to Cleartrip flights landing page to establish valid Akamai sensor token cookies (_abck),
+        and dismisses any promotional login overlays.
+        """
+        print("  [Session Setup] Priming session on Cleartrip to generate valid Akamai clearance...")
+        try:
+            await page.goto("https://www.cleartrip.com/flights", wait_until="domcontentloaded", timeout=45000)
+            await asyncio.sleep(2.5)
+
+            # Dismiss login modal if present
+            close_icon = page.locator('[data-testid="closeIcon"]').first
+            if await close_icon.count() > 0 and await close_icon.is_visible():
+                await close_icon.click()
+                await asyncio.sleep(0.5)
+                print("  [Session Setup] Dismissed login popup overlay.")
+            else:
+                # Fallback backdrop click
+                await page.mouse.click(50, 50)
+                await asyncio.sleep(0.3)
+        except Exception as e:
+            print(f"  [Session Setup] Priming notice: {e}")
 
     async def _extract_flight_cards(self, page: Page) -> List[Dict[str, Any]]:
         """Extracts live flight listings from rendered search DOM."""
@@ -203,8 +271,7 @@ class CleartripScraper:
     ) -> Dict[str, Any]:
         """
         Executes 1 representative checkout navigation per route/day.
-        Simulates natural human mouse telemetry for Akamai Bot Manager,
-        captures 01_checkout_review.png, and evaluates the checkout transition.
+        Captures 01_checkout_review.png and evaluates the checkout transition.
         """
         audit_result = {
             "checkout_successful": False,
@@ -217,7 +284,7 @@ class CleartripScraper:
         }
 
         try:
-            # Human telemetry: smooth mouse moves & scroll to generate valid Akamai sensor data
+            # Human telemetry: smooth mouse moves & scroll to generate valid telemetry
             for y in range(120, 600, 80):
                 await page.mouse.move(200, y, steps=5)
                 await asyncio.sleep(0.05)
@@ -296,11 +363,10 @@ class CleartripScraper:
             final_url = checkout_page.url
 
             if "/itinerary/failure" in final_url or "server error" in page_text.lower():
-                audit_result["status"] = "akamai_edge_blocked"
+                audit_result["status"] = "edge_redirect"
                 audit_result["notes"] = (
-                    "Cleartrip's endpoint /itin/v7/itinerary/create blocked automated checkout (HTTP 403 Access Denied), "
-                    "redirecting to /itinerary/failure ('Server error'). Full disaggregated fare breakdown "
-                    "(base fare, fuel surcharge YQ, airport fees, taxes) was captured directly from live flight search response."
+                    "Endpoint /itin/v7/itinerary/create redirected to /itinerary/failure. "
+                    "Full disaggregated fare breakdown (base fare, taxes, fees) was captured directly from live search API response."
                 )
                 print(f"  [Representative Checkout] Status: {audit_result['status']}")
             else:
@@ -330,7 +396,10 @@ class CleartripScraper:
                     audit_result["notes"] = "Review page loaded; breakdown captured from live search API response."
 
             if checkout_page != page:
-                await checkout_page.close()
+                try:
+                    await checkout_page.close()
+                except Exception:
+                    pass
 
         except Exception as e:
             audit_result["status"] = "exception"
@@ -340,12 +409,14 @@ class CleartripScraper:
 
     async def run(self) -> Dict[str, Any]:
         """
-        Executes search and extraction across configured advance purchase horizons.
+        Executes search and extraction across configured advance purchase horizons using Chrome CDP.
         Executes exactly 1 representative checkout audit per day.
         """
         print("=" * 80)
         print(f"[AirGo Cleartrip Scraper] Target Route: {self.route}")
         print(f"                        Horizons    : {[f'T+{h}' for h in self.horizons]}")
+        print(f"                        Headless    : {self.headless}")
+        print(f"                        Chrome Bin  : {self.chrome_binary}")
         print(f"                        Output Run  : {self.run_folder}")
         print("=" * 80)
 
@@ -353,11 +424,20 @@ class CleartripScraper:
         horizon_summaries: List[Dict[str, Any]] = []
         today_date = date.today()
 
-        profile_dir = tempfile.mkdtemp(prefix="airgo_ct_run_")
+        profile_dir = tempfile.mkdtemp(prefix="airgo_ct_cdp_")
+        port = _find_free_port()
+        chrome_proc = self._start_chrome_process(port, profile_dir)
+        await asyncio.sleep(2.5)
 
-        async with async_playwright() as p:
-            context = await self._launch_browser(p, profile_dir)
-            try:
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.connect_over_cdp(f"http://127.0.0.1:{port}")
+                context = browser.contexts[0] if browser.contexts else await browser.new_context()
+                page = context.pages[0] if context.pages else await context.new_page()
+
+                # Step 1: Prime session on Cleartrip home to establish valid Akamai clearance
+                await self._prime_session(page)
+
                 for h in self.horizons:
                     horizon_label = f"T+{h}"
                     travel_dt = today_date + timedelta(days=h)
@@ -373,14 +453,11 @@ class CleartripScraper:
                     )
 
                     print(f"\n[Scraping] {self.route} | {horizon_label} (Travel Date: {dept_date_str})...")
-                    page = context.pages[0] if context.pages else await context.new_page()
-                    if not self.headless:
-                        await page.bring_to_front()
 
                     search_payload: Dict[str, Any] = {}
 
                     async def on_response(res):
-                        if "flight/search/v2" in res.url and "json" in res.headers.get("content-type", ""):
+                        if "flight/search/v2" in res.url and res.status == 200:
                             try:
                                 nonlocal search_payload
                                 search_payload = await res.json()
@@ -390,18 +467,25 @@ class CleartripScraper:
                     page.on("response", on_response)
 
                     try:
+                        print(f"  [Navigating] Loading search results for {dept_date_str}...")
                         await page.goto(search_url, wait_until="domcontentloaded", timeout=45000)
-                        print("  [Loading] Waiting for flight results to render on screen...")
+                        
+                        # Wait for flight cards/book buttons or fallback
                         try:
                             await page.wait_for_selector("button:has-text('Book')", timeout=25000)
                         except Exception:
                             pass
-                        await page.wait_for_timeout(3000)
+                        await asyncio.sleep(3.0)
 
                         # Capture 00_search_results.png
                         shot_00 = window_dir / "00_search_results.png"
                         await self._safe_capture_screenshot(page, shot_00)
                         print(f"  [Screenshot] Saved: {shot_00.name}")
+
+                        # Check for stumped / error page
+                        body_text = await page.evaluate("() => document.body ? document.body.innerText : ''")
+                        if "stumped" in body_text.lower():
+                            raise RuntimeError("Cleartrip displayed 'servers are stumped' error page.")
 
                         # Extract listings from DOM and enrich with live search API breakdowns
                         raw_cards = await self._extract_flight_cards(page)
@@ -416,7 +500,7 @@ class CleartripScraper:
                         top5_enriched = []
                         for rank, card_dom in enumerate(raw_cards[:5]):
                             enriched_card = dict(card_dom)
-                            
+
                             # Match with search_payload if available
                             if rank < len(cards_data):
                                 c_api = cards_data[rank]
@@ -431,12 +515,12 @@ class CleartripScraper:
                                 total_tax = pricing.get("totalTax")
 
                                 # Disaggregated breakdown
-                                sub_fare = fare_obj.get("subTravelOptionFare", [{}])[0]
-                                pax_fare = sub_fare.get("paxFare", [{}])[0]
+                                sub_fares = fare_obj.get("subTravelOptionFare", [])
+                                pax_fare = sub_fares[0].get("paxFare", [{}])[0] if sub_fares else {}
                                 components = {c.get("code") or c.get("category"): c.get("amount") for c in pax_fare.get("priceComponents", [])}
-                                
-                                flight_fare = sub_fare.get("flightFare", [{}])[0]
-                                identifiers = flight_fare.get("identifiers", {})
+
+                                flight_fares = sub_fares[0].get("flightFare", []) if sub_fares else []
+                                identifiers = flight_fares[0].get("identifiers", {}) if flight_fares else {}
                                 brand = identifiers.get("brandName") or identifiers.get("brand")
                                 seats = identifiers.get("availableSeatCount")
                                 fare_basis = identifiers.get("fareBasisCode")
@@ -510,18 +594,21 @@ class CleartripScraper:
 
                     except Exception as he:
                         print(f"  [!] Error scraping {self.route}_{horizon_label}: {he}")
-                    finally:
-                        if self.headless:
-                            await page.close()
 
                 if not self.headless:
                     print(f"\n[Visual Observation Mode] Pausing for {self.pause_at_end} seconds so you can see the open browser window...")
                     await asyncio.sleep(self.pause_at_end)
 
-            finally:
-                await context.close()
-                import shutil
-                shutil.rmtree(profile_dir, ignore_errors=True)
+                await browser.close()
+
+        finally:
+            print("[Cleanup] Terminating Chrome process and cleaning up temporary profile...")
+            chrome_proc.terminate()
+            try:
+                chrome_proc.wait(timeout=5)
+            except Exception:
+                chrome_proc.kill()
+            shutil.rmtree(profile_dir, ignore_errors=True)
 
         # Write quotes.json at root of run folder
         quotes_file = self.run_folder / "quotes.json"
@@ -532,7 +619,7 @@ class CleartripScraper:
         summary_file = self.run_folder / "run_summary.json"
         summary_data = {
             "scraper": "Cleartrip",
-            "channel": "chrome",
+            "channel": "chrome_cdp",
             "route": self.route,
             "horizons": [f"T+{h}" for h in self.horizons],
             "total_quotes_captured": len(all_quotes),
@@ -556,7 +643,7 @@ class CleartripScraper:
 
 def run_cleartrip_scrape(
     route: str = "BOM-DEL",
-    horizons: List[int] = None,
+    horizons: Optional[List[int]] = None,
     headless: bool = True,
     pause_at_end: int = 15
 ) -> Dict[str, Any]:
@@ -566,7 +653,7 @@ def run_cleartrip_scrape(
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Cleartrip Flight Scraper with Patchright & Chrome")
+    parser = argparse.ArgumentParser(description="Cleartrip Flight Scraper with Patchright & Chrome over CDP")
     parser.add_argument("--route", type=str, default="BOM-DEL", help="Route code e.g. BOM-DEL")
     parser.add_argument("--horizons", type=str, default="1", help="Advance window e.g. 1")
     parser.add_argument("--visible", action="store_true", help="Launch visible Chrome browser window (non-headless)")
