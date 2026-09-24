@@ -27,10 +27,14 @@ scratch/
 # Exclude generated JSON dumps, but allow project/client JSON configs & data
 *.json
 !pyrightconfig.json
-!client/package.json
-!client/package-lock.json
-!client/.oxlintrc.json
-!client/src/data/dgcaRouteBasket.json
+# Allow client static assets and source data
+!client/src/assets/**
+!client/public/**
+!client/**/*.png
+!client/**/*.jpg
+!client/**/*.jpeg
+!client/**/*.svg
+!client/**/*.json
 
 # Frontend
 client/node_modules/
